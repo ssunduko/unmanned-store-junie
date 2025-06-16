@@ -1,0 +1,1868 @@
+openapi: 3.0.3
+info:
+  title: Unmanned Store API
+  description: REST API for autonomous retail store operations including customer management, authentication, shopping, checkout, and robotic assistance
+  version: 1.0.0
+  contact:
+    name: Store Operations
+    email: api@unmannedstore.com
+
+servers:
+  - url: https://api.unmannedstore.com/v1
+    description: Production server
+  - url: https://staging-api.unmannedstore.com/v1
+    description: Staging server
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+paths:
+  # Customer Registration Flow
+  /customers/register:
+    post:
+      tags:
+        - Customer Registration
+      summary: Register new customer
+      description: Create account for accessing unmanned stores through turnstile entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRegistration'
+      responses:
+        '201':
+          description: Customer registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerRegistrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Customer already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /customers/{customerId}/authentication:
+    post:
+      tags:
+        - Customer Registration
+      summary: Setup authentication method
+      description: Configure biometric or mobile app authentication
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationSetup'
+      responses:
+        '200':
+          description: Authentication method configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationSetupResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /customers/{customerId}/payment-methods:
+    post:
+      tags:
+        - Customer Registration
+      summary: Add payment method
+      description: Add credit/debit card for automatic checkout
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethod'
+      responses:
+        '201':
+          description: Payment method added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethodResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    get:
+      tags:
+        - Customer Registration
+      summary: Get customer payment methods
+      parameters:
+        - $ref: '#/components/parameters/CustomerId'
+      responses:
+        '200':
+          description: Payment methods retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethodResponse'
+
+  # Customer Authentication Flow
+  /auth/authenticate:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate customer at turnstile
+      description: Verify customer identity using biometric or mobile app
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationError'
+        '423':
+          description: Account restricted or banned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Store Entry Flow
+  /stores/{storeId}/entry:
+    post:
+      tags:
+        - Store Entry
+      summary: Process store entry
+      description: Manage physical entry through turnstile and activate tracking
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreEntryRequest'
+      responses:
+        '200':
+          description: Entry successful, tracking activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreEntryResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '423':
+          description: Entry timeout or turnstile locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stores/{storeId}/sessions/{sessionId}/status:
+    get:
+      tags:
+        - Store Entry
+      summary: Get session status
+      description: Check active customer session and tracking status
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Session status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Shopping Basket Flow
+  /stores/{storeId}/baskets/available:
+    get:
+      tags:
+        - Shopping Basket
+      summary: Get available smart baskets
+      description: List baskets available for customer assignment
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      responses:
+        '200':
+          description: Available baskets retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailableBaskets'
+
+  /stores/{storeId}/baskets/{basketId}/assign:
+    post:
+      tags:
+        - Shopping Basket
+      summary: Assign basket to customer
+      description: Link smart basket to customer session for item tracking
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/BasketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasketAssignmentRequest'
+      responses:
+        '200':
+          description: Basket assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasketAssignmentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Basket already assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stores/{storeId}/baskets/{basketId}/items:
+    get:
+      tags:
+        - Shopping Experience
+      summary: Get basket contents
+      description: Retrieve current items in customer's basket
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/BasketId'
+      responses:
+        '200':
+          description: Basket contents retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasketContents'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Shopping Experience
+      summary: Add item to basket
+      description: Automatically triggered when RFID detects item addition
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/BasketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemAddRequest'
+      responses:
+        '200':
+          description: Item added to basket
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasketUpdate'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /stores/{storeId}/baskets/{basketId}/items/{itemId}:
+    delete:
+      tags:
+        - Shopping Experience
+      summary: Remove item from basket
+      description: Automatically triggered when RFID detects item removal
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/BasketId'
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Item removed from basket
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasketUpdate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Checkout Flow
+  /stores/{storeId}/checkout/initiate:
+    post:
+      tags:
+        - Checkout
+      summary: Initiate checkout process
+      description: Start automated payment processing when customer enters exit zone
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutInitiateRequest'
+      responses:
+        '200':
+          description: Checkout initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutInitiateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /stores/{storeId}/checkout/{checkoutId}/verify:
+    post:
+      tags:
+        - Checkout
+      summary: Verify basket contents
+      description: Multi-system verification of items before payment
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/CheckoutId'
+      responses:
+        '200':
+          description: Verification complete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutVerificationResponse'
+        '409':
+          description: Verification mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutDiscrepancy'
+
+  /stores/{storeId}/checkout/{checkoutId}/process:
+    post:
+      tags:
+        - Checkout
+      summary: Process payment
+      description: Charge customer's registered payment method
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/CheckoutId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentProcessRequest'
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentProcessResponse'
+        '402':
+          description: Payment failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentError'
+
+  /stores/{storeId}/checkout/{checkoutId}/authorize-exit:
+    post:
+      tags:
+        - Checkout
+      summary: Authorize store exit
+      description: Unlock exit turnstile after successful payment
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/CheckoutId'
+      responses:
+        '200':
+          description: Exit authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExitAuthorizationResponse'
+        '402':
+          description: Payment required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Help Request Flow
+  /stores/{storeId}/help/request:
+    post:
+      tags:
+        - Customer Help
+      summary: Request assistance
+      description: Submit help request for automated assistance
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HelpRequest'
+      responses:
+        '201':
+          description: Help request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelpRequestResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /stores/{storeId}/help/requests/{requestId}/status:
+    get:
+      tags:
+        - Customer Help
+      summary: Get help request status
+      description: Check status of help request and robot dispatch
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Help request status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelpRequestStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags:
+        - Customer Help
+      summary: Update help request
+      description: Update help request status or mark as complete
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HelpRequestUpdate'
+      responses:
+        '200':
+          description: Help request updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HelpRequestStatus'
+
+  # Robot Operations
+  /stores/{storeId}/robots/available:
+    get:
+      tags:
+        - Robot Operations
+      summary: Get available robots
+      description: List robots available for assignment by type
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - name: type
+          in: query
+          description: Filter by robot type
+          schema:
+            type: string
+            enum: [cleanup, carryout, restock]
+      responses:
+        '200':
+          description: Available robots retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailableRobots'
+
+  /stores/{storeId}/robots/{robotId}/dispatch:
+    post:
+      tags:
+        - Robot Operations
+      summary: Dispatch robot
+      description: Assign robot to specific task
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/RobotId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RobotDispatchRequest'
+      responses:
+        '200':
+          description: Robot dispatched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RobotDispatchResponse'
+        '409':
+          description: Robot not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /stores/{storeId}/robots/{robotId}/status:
+    get:
+      tags:
+        - Robot Operations
+      summary: Get robot status
+      description: Check current robot status and task progress
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - $ref: '#/components/parameters/RobotId'
+      responses:
+        '200':
+          description: Robot status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RobotStatus'
+
+  # Inventory and Restocking
+  /stores/{storeId}/inventory/status:
+    get:
+      tags:
+        - Inventory Management
+      summary: Get inventory status
+      description: Retrieve current stock levels and alerts
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - name: low_stock_only
+          in: query
+          description: Return only low stock items
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Inventory status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryStatus'
+
+  /stores/{storeId}/inventory/restock:
+    post:
+      tags:
+        - Inventory Management
+      summary: Initiate restock operation
+      description: Deploy restock robot for low inventory items
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestockRequest'
+      responses:
+        '202':
+          description: Restock operation initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestockResponse'
+        '409':
+          description: No robots available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Store Operations
+  /stores/{storeId}/emergency:
+    post:
+      tags:
+        - Store Operations
+      summary: Trigger emergency procedures
+      description: Activate emergency protocols and unlock all exits
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmergencyRequest'
+      responses:
+        '200':
+          description: Emergency procedures activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmergencyResponse'
+
+  /stores/{storeId}/analytics:
+    get:
+      tags:
+        - Store Operations
+      summary: Get store analytics
+      description: Retrieve operational metrics and KPIs
+      parameters:
+        - $ref: '#/components/parameters/StoreId'
+        - name: date_from
+          in: query
+          description: Start date for analytics (ISO 8601)
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: End date for analytics (ISO 8601)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Store analytics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreAnalytics'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    CustomerId:
+      name: customerId
+      in: path
+      required: true
+      description: Unique customer identifier
+      schema:
+        type: string
+        format: uuid
+    
+    StoreId:
+      name: storeId
+      in: path
+      required: true
+      description: Unique store identifier
+      schema:
+        type: string
+        pattern: '^STORE_[A-Z0-9]{4}$'
+    
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      description: Customer session identifier
+      schema:
+        type: string
+        format: uuid
+    
+    BasketId:
+      name: basketId
+      in: path
+      required: true
+      description: Smart basket identifier
+      schema:
+        type: string
+        pattern: '^[A-Z]\d{3}$'
+    
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      description: Product item identifier
+      schema:
+        type: string
+    
+    CheckoutId:
+      name: checkoutId
+      in: path
+      required: true
+      description: Checkout session identifier
+      schema:
+        type: string
+        format: uuid
+    
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      description: Help request identifier
+      schema:
+        type: string
+        format: uuid
+    
+    RobotId:
+      name: robotId
+      in: path
+      required: true
+      description: Robot identifier
+      schema:
+        type: string
+        pattern: '^(CL|CO|RS)\d{2}$'
+
+  responses:
+    BadRequest:
+      description: Invalid request data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Unauthorized:
+      description: Authentication required or failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    # Customer Registration Schemas
+    CustomerRegistration:
+      type: object
+      required:
+        - fullName
+        - email
+        - phoneNumber
+        - password
+        - dateOfBirth
+        - acceptTerms
+      properties:
+        fullName:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        phoneNumber:
+          type: string
+          pattern: '^\+?[1-9]\d{1,14}$'
+        password:
+          type: string
+          minLength: 8
+          description: Minimum 8 characters
+        dateOfBirth:
+          type: string
+          format: date
+          description: For age-restricted items
+        acceptTerms:
+          type: boolean
+          enum: [true]
+
+    CustomerRegistrationResponse:
+      type: object
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [registered, pending_verification]
+        nextSteps:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+
+    AuthenticationSetup:
+      type: object
+      required:
+        - method
+      properties:
+        method:
+          type: string
+          enum: [face_recognition, fingerprint, mobile_app]
+        biometricData:
+          type: string
+          format: base64
+          description: Base64 encoded biometric template (for face/fingerprint)
+        mobileAppToken:
+          type: string
+          description: Mobile app registration token
+
+    AuthenticationSetupResponse:
+      type: object
+      properties:
+        methodId:
+          type: string
+        method:
+          type: string
+        status:
+          type: string
+          enum: [configured, failed]
+        message:
+          type: string
+
+    PaymentMethod:
+      type: object
+      required:
+        - cardNumber
+        - cardholderName
+        - expiryDate
+        - cvv
+      properties:
+        cardNumber:
+          type: string
+          pattern: '^\d{13,19}$'
+        cardholderName:
+          type: string
+          maxLength: 50
+        expiryDate:
+          type: string
+          pattern: '^(0[1-9]|1[0-2])\/\d{2}$'
+          example: "12/25"
+        cvv:
+          type: string
+          pattern: '^\d{3,4}$'
+        isDefault:
+          type: boolean
+          default: false
+
+    PaymentMethodResponse:
+      type: object
+      properties:
+        paymentMethodId:
+          type: string
+          format: uuid
+        cardType:
+          type: string
+          enum: [visa, mastercard, amex, discover]
+        lastFourDigits:
+          type: string
+          pattern: '^\d{4}$'
+        expiryDate:
+          type: string
+        isDefault:
+          type: boolean
+        status:
+          type: string
+          enum: [active, expired, blocked]
+
+    # Authentication Schemas
+    AuthenticationRequest:
+      type: object
+      required:
+        - storeId
+        - method
+      properties:
+        storeId:
+          type: string
+        method:
+          type: string
+          enum: [face_recognition, fingerprint, mobile_app]
+        biometricData:
+          type: string
+          format: base64
+          description: Captured biometric data
+        mobileAppCode:
+          type: string
+          pattern: '^\d{6}$'
+          description: 6-digit manual code
+        qrToken:
+          type: string
+          description: QR code scan token
+
+    AuthenticationResponse:
+      type: object
+      properties:
+        sessionToken:
+          type: string
+          format: jwt
+        customerId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        turnstileStatus:
+          type: string
+          enum: [unlocked, locked]
+        entryTimer:
+          type: integer
+          description: Seconds remaining for entry
+        message:
+          type: string
+
+    AuthenticationError:
+      type: object
+      properties:
+        error:
+          type: string
+          enum: [invalid_credentials, biometric_mismatch, method_not_found, account_banned]
+        message:
+          type: string
+        retryOptions:
+          type: array
+          items:
+            type: string
+
+    # Store Entry Schemas
+    StoreEntryRequest:
+      type: object
+      required:
+        - sessionToken
+        - turnstileId
+      properties:
+        sessionToken:
+          type: string
+          format: jwt
+        turnstileId:
+          type: string
+
+    StoreEntryResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        entryTime:
+          type: string
+          format: date-time
+        trackingStatus:
+          type: object
+          properties:
+            rfidActive:
+              type: boolean
+            cameraTracking:
+              type: boolean
+            locationTracking:
+              type: boolean
+        welcomeMessage:
+          type: string
+        navigationTips:
+          type: array
+          items:
+            type: string
+
+    SessionStatus:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, checkout, completed, expired]
+        entryTime:
+          type: string
+          format: date-time
+        currentLocation:
+          type: string
+        basketId:
+          type: string
+        trackingSystems:
+          type: object
+          properties:
+            rfid:
+              type: boolean
+            camera:
+              type: boolean
+            location:
+              type: boolean
+
+    # Shopping Basket Schemas
+    AvailableBaskets:
+      type: object
+      properties:
+        available:
+          type: array
+          items:
+            type: object
+            properties:
+              basketId:
+                type: string
+              batteryLevel:
+                type: integer
+                minimum: 0
+                maximum: 100
+              status:
+                type: string
+                enum: [available, charging, maintenance]
+              location:
+                type: string
+        total:
+          type: integer
+
+    BasketAssignmentRequest:
+      type: object
+      required:
+        - sessionId
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+
+    BasketAssignmentResponse:
+      type: object
+      properties:
+        basketId:
+          type: string
+        sessionId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        status:
+          type: string
+          enum: [linked, active]
+        batteryLevel:
+          type: integer
+        runningTotal:
+          type: number
+          format: decimal
+        confirmationMessage:
+          type: string
+
+    BasketContents:
+      type: object
+      properties:
+        basketId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BasketItem'
+        runningTotal:
+          type: number
+          format: decimal
+        itemCount:
+          type: integer
+        lastUpdated:
+          type: string
+          format: date-time
+
+    BasketItem:
+      type: object
+      properties:
+        itemId:
+          type: string
+        productName:
+          type: string
+        price:
+          type: number
+          format: decimal
+        quantity:
+          type: integer
+        addedAt:
+          type: string
+          format: date-time
+        rfidTag:
+          type: string
+
+    ItemAddRequest:
+      type: object
+      required:
+        - rfidTag
+        - productId
+      properties:
+        rfidTag:
+          type: string
+        productId:
+          type: string
+        detectedAt:
+          type: string
+          format: date-time
+
+    BasketUpdate:
+      type: object
+      properties:
+        basketId:
+          type: string
+        action:
+          type: string
+          enum: [item_added, item_removed]
+        item:
+          $ref: '#/components/schemas/BasketItem'
+        newTotal:
+          type: number
+          format: decimal
+        itemCount:
+          type: integer
+        notification:
+          type: string
+
+    # Checkout Schemas
+    CheckoutInitiateRequest:
+      type: object
+      required:
+        - sessionId
+        - basketId
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        basketId:
+          type: string
+        exitZoneId:
+          type: string
+
+    CheckoutInitiateResponse:
+      type: object
+      properties:
+        checkoutId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [initiated, verifying_basket]
+        message:
+          type: string
+
+    CheckoutVerificationResponse:
+      type: object
+      properties:
+        checkoutId:
+          type: string
+          format: uuid
+        verificationStatus:
+          type: string
+          enum: [verified, discrepancy_detected]
+        verificationMethods:
+          type: object
+          properties:
+            cameraVerification:
+              type: boolean
+            rfidVerification:
+              type: boolean
+            weightVerification:
+              type: boolean
+        receipt:
+          $ref: '#/components/schemas/Receipt'
+
+    CheckoutDiscrepancy:
+      type: object
+      properties:
+        checkoutId:
+          type: string
+          format: uuid
+        discrepancies:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: [missing_item, extra_item, weight_mismatch]
+              description:
+                type: string
+              expectedItem:
+                $ref: '#/components/schemas/BasketItem'
+              actualItem:
+                $ref: '#/components/schemas/BasketItem'
+        resolution:
+          type: string
+          enum: [operator_override_required, customer_assistance_needed]
+
+    Receipt:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productName:
+                type: string
+              price:
+                type: number
+                format: decimal
+              quantity:
+                type: integer
+              lineTotal:
+                type: number
+                format: decimal
+        subtotal:
+          type: number
+          format: decimal
+        tax:
+          type: number
+          format: decimal
+        total:
+          type: number
+          format: decimal
+
+    PaymentProcessRequest:
+      type: object
+      properties:
+        paymentMethodId:
+          type: string
+          format: uuid
+          description: Use specific payment method, otherwise default
+
+    PaymentProcessResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        status:
+          type: string
+          enum: [approved, declined, pending]
+        amount:
+          type: number
+          format: decimal
+        paymentMethod:
+          type: object
+          properties:
+            type:
+              type: string
+            lastFourDigits:
+              type: string
+        receipt:
+          $ref: '#/components/schemas/Receipt'
+        processedAt:
+          type: string
+          format: date-time
+
+    PaymentError:
+      type: object
+      properties:
+        error:
+          type: string
+          enum: [insufficient_funds, card_declined, payment_timeout, fraud_detected]
+        message:
+          type: string
+        alternativeOptions:
+          type: array
+          items:
+            type: string
+
+    ExitAuthorizationResponse:
+      type: object
+      properties:
+        authorized:
+          type: boolean
+        turnstileStatus:
+          type: string
+          enum: [unlocked, locked]
+        exitTimer:
+          type: integer
+          description: Seconds remaining for exit
+        message:
+          type: string
+        receipt:
+          type: object
+          properties:
+            email:
+              type: boolean
+            mobileApp:
+              type: boolean
+            downloadUrl:
+              type: string
+
+    # Help Request Schemas
+    HelpRequest:
+      type: object
+      required:
+        - sessionId
+        - type
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [cleanup, carryout, product_issue, emergency]
+        subType:
+          type: string
+          description: Specific issue type based on main type
+        location:
+          type: string
+          description: Current customer location
+        description:
+          type: string
+          maxLength: 500
+        priority:
+          type: string
+          enum: [low, normal, high, emergency]
+          default: normal
+
+    HelpRequestResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        type:
+          type: string
+        status:
+          type: string
+          enum: [received, robot_assigned, in_progress, completed]
+        estimatedResponseTime:
+          type: integer
+          description: Estimated response time in minutes
+        assignedRobot:
+          type: object
+          properties:
+            robotId:
+              type: string
+            type:
+              type: string
+            eta:
+              type: integer
+        instructions:
+          type: array
+          items:
+            type: string
+
+    HelpRequestStatus:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [received, robot_assigned, in_progress, completed, cancelled]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        assignedRobot:
+          type: object
+          properties:
+            robotId:
+              type: string
+            currentLocation:
+              type: string
+            estimatedCompletion:
+              type: string
+              format: date-time
+        updates:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              message:
+                type: string
+              status:
+                type: string
+
+    HelpRequestUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [completed, cancelled]
+        customerFeedback:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+
+    # Robot Operations Schemas
+    AvailableRobots:
+      type: object
+      properties:
+        cleanup:
+          type: array
+          items:
+            $ref: '#/components/schemas/RobotInfo'
+        carryout:
+          type: array
+          items:
+            $ref: '#/components/schemas/RobotInfo'
+        restock:
+          type: array
+          items:
+            $ref: '#/components/schemas/RobotInfo'
+        total:
+          type: integer
+
+    RobotInfo:
+      type: object
+      properties:
+        robotId:
+          type: string
+        type:
+          type: string
+          enum: [cleanup, carryout, restock]
+        status:
+          type: string
+          enum: [available, busy, charging, maintenance]
+        batteryLevel:
+          type: integer
+          minimum: 0
+          maximum: 100
+        currentLocation:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+
+    RobotDispatchRequest:
+      type: object
+      required:
+        - taskType
+        - location
+      properties:
+        taskType:
+          type: string
+          enum: [cleanup_spill, cleanup_broken_item, carryout_cart, carryout_vehicle, restock_items]
+        location:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high, emergency]
+        taskDetails:
+          type: object
+          description: Task-specific parameters
+        requestId:
+          type: string
+          format: uuid
+          description: Associated help request ID
+
+    RobotDispatchResponse:
+      type: object
+      properties:
+        dispatchId:
+          type: string
+          format: uuid
+        robotId:
+          type: string
+        estimatedArrival:
+          type: string
+          format: date-time
+        taskId:
+          type: string
+          format: uuid
+        instructions:
+          type: array
+          items:
+            type: string
+
+    RobotStatus:
+      type: object
+      properties:
+        robotId:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+          enum: [idle, traveling, working, charging, maintenance, error]
+        batteryLevel:
+          type: integer
+        currentLocation:
+          type: string
+        currentTask:
+          type: object
+          properties:
+            taskId:
+              type: string
+              format: uuid
+            type:
+              type: string
+            progress:
+              type: integer
+              minimum: 0
+              maximum: 100
+            estimatedCompletion:
+              type: string
+              format: date-time
+        lastUpdated:
+          type: string
+          format: date-time
+
+    # Inventory Management Schemas
+    InventoryStatus:
+      type: object
+      properties:
+        storeId:
+          type: string
+        totalItems:
+          type: integer
+        lowStockCount:
+          type: integer
+        outOfStockCount:
+          type: integer
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+              productName:
+                type: string
+              currentStock:
+                type: integer
+              threshold:
+                type: integer
+              status:
+                type: string
+                enum: [in_stock, low_stock, out_of_stock]
+              salesVelocity:
+                type: number
+                description: Units sold per hour
+              lastRestocked:
+                type: string
+                format: date-time
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+              alertType:
+                type: string
+                enum: [low_stock, out_of_stock, high_demand]
+              priority:
+                type: string
+                enum: [low, medium, high, critical]
+              triggeredAt:
+                type: string
+                format: date-time
+
+    RestockRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: string
+              quantity:
+                type: integer
+                minimum: 1
+              priority:
+                type: string
+                enum: [low, normal, high]
+        urgency:
+          type: string
+          enum: [scheduled, immediate, emergency]
+        operatorId:
+          type: string
+
+    RestockResponse:
+      type: object
+      properties:
+        restockId:
+          type: string
+          format: uuid
+        assignedRobot:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: string
+              quantity:
+                type: integer
+              priority:
+                type: integer
+        estimatedDuration:
+          type: integer
+          description: Estimated completion time in minutes
+        affectedAisles:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [queued, in_progress, completed]
+
+    # Store Operations Schemas
+    EmergencyRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum: [fire, medical, security, evacuation, power_outage]
+        description:
+          type: string
+        reportedBy:
+          type: string
+          enum: [customer, operator, system]
+        location:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+
+    EmergencyResponse:
+      type: object
+      properties:
+        emergencyId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [activated, emergency_services_notified, resolved]
+        actionsPerformed:
+          type: array
+          items:
+            type: string
+        emergencyContacts:
+          type: array
+          items:
+            type: object
+            properties:
+              service:
+                type: string
+              contactTime:
+                type: string
+                format: date-time
+              status:
+                type: string
+        systemChanges:
+          type: object
+          properties:
+            turnstiles:
+              type: string
+              enum: [all_unlocked, emergency_mode]
+            lighting:
+              type: string
+              enum: [emergency_activated, normal]
+            alarms:
+              type: string
+              enum: [activated, silent]
+
+    StoreAnalytics:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date
+            to:
+              type: string
+              format: date
+        customerMetrics:
+          type: object
+          properties:
+            totalVisits:
+              type: integer
+            averageShoppingTime:
+              type: number
+              description: Average time in minutes
+            averageBasketSize:
+              type: number
+              format: decimal
+            authenticationTimes:
+              type: object
+              properties:
+                faceRecognition:
+                  type: number
+                  description: Average time in seconds
+                fingerprint:
+                  type: number
+                mobileApp:
+                  type: number
+            checkoutTimes:
+              type: object
+              properties:
+                average:
+                  type: number
+                  description: Average time in seconds
+                percentile95:
+                  type: number
+        operationalMetrics:
+          type: object
+          properties:
+            systemUptime:
+              type: number
+              description: Percentage uptime
+            inventoryAccuracy:
+              type: number
+              description: Percentage accuracy
+            robotAvailability:
+              type: number
+              description: Percentage availability
+            transactionSuccessRate:
+              type: number
+              description: Percentage success rate
+            helpRequestResolution:
+              type: number
+              description: Average resolution time in minutes
+        salesMetrics:
+          type: object
+          properties:
+            totalRevenue:
+              type: number
+              format: decimal
+            totalTransactions:
+              type: integer
+            averageTransactionValue:
+              type: number
+              format: decimal
+            topSellingProducts:
+              type: array
+              items:
+                type: object
+                properties:
+                  productId:
+                    type: string
+                  productName:
+                    type: string
+                  unitsSold:
+                    type: integer
+                  revenue:
+                    type: number
+                    format: decimal
+        issues:
+          type: object
+          properties:
+            totalHelpRequests:
+              type: integer
+            helpRequestsByType:
+              type: object
+              properties:
+                cleanup:
+                  type: integer
+                carryout:
+                  type: integer
+                productIssue:
+                  type: integer
+                emergency:
+                  type: integer
+            averageResolutionTime:
+              type: number
+              description: Average resolution time in minutes
+            customerSatisfaction:
+              type: number
+              description: Average rating 1-5
+
+    # Common Error Schema
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+          format: uuid
+
+  examples:
+    CustomerRegistrationExample:
+      summary: Example customer registration
+      value:
+        fullName: "John Smith"
+        email: "john.smith@email.com"
+        phoneNumber: "+1234567890"
+        password: "SecurePass123!"
+        dateOfBirth: "1990-05-15"
+        acceptTerms: true
+
+    AuthenticationRequestExample:
+      summary: Face recognition authentication
+      value:
+        storeId: "STORE_A001"
+        method: "face_recognition"
+        biometricData: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+
+    HelpRequestExample:
+      summary: Cleanup request for spill
+      value:
+        sessionId: "123e4567-e89b-12d3-a456-426614174000"
+        type: "cleanup"
+        subType: "liquid_spill"
+        location: "Aisle 3, Dairy Section"
+        description: "Small milk spill near refrigerated section"
+        priority: "normal"
+
+    RestockRequestExample:
+      summary: Emergency restock request
+      value:
+        items:
+          - productId: "MILK_001"
+            quantity: 20
+            priority: "high"
+          - productId: "BREAD_005"
+            quantity: 25
+            priority: "normal"
+        urgency: "immediate"
+        operatorId: "OP001"
+
+tags:
+  - name: Customer Registration
+    description: Customer account creation and setup
+  - name: Authentication
+    description: Customer identity verification at store entry
+  - name: Store Entry
+    description: Physical entry management and tracking activation
+  - name: Shopping Basket
+    description: Smart basket assignment and management
+  - name: Shopping Experience
+    description: Item tracking and basket updates during shopping
+  - name: Checkout
+    description: Automated payment processing and store exit
+  - name: Customer Help
+    description: Automated assistance and help request management
+  - name: Robot Operations
+    description: Robot deployment and task management
+  - name: Inventory Management
+    description: Stock monitoring and restocking operations
+  - name: Store Operations
+    description: Emergency procedures and analytics
