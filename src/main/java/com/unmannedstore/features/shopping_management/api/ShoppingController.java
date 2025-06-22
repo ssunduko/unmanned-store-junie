@@ -49,8 +49,12 @@ public class ShoppingController {
 
         Optional<ShoppingSession> sessionOpt = shoppingService.findSessionByBasketId(basketId);
 
+        // If no session exists for this basketId, create a new one
         if (sessionOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // Use a default customer ID since we don't have authentication yet
+            String customerId = "default-customer";
+            ShoppingSession newSession = shoppingService.createSession(customerId, storeId, basketId);
+            sessionOpt = Optional.of(newSession);
         }
 
         ShoppingSession session = sessionOpt.get();
@@ -87,8 +91,12 @@ public class ShoppingController {
 
         Optional<ShoppingSession> sessionOpt = shoppingService.findSessionByBasketId(basketId);
 
+        // If no session exists for this basketId, create a new one
         if (sessionOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // Use a default customer ID since we don't have authentication yet
+            String customerId = "default-customer";
+            ShoppingSession newSession = shoppingService.createSession(customerId, storeId, basketId);
+            sessionOpt = Optional.of(newSession);
         }
 
         try {
@@ -144,7 +152,14 @@ public class ShoppingController {
 
         Optional<ShoppingSession> sessionOpt = shoppingService.findSessionByBasketId(basketId);
 
+        // If no session exists for this basketId, create a new one
         if (sessionOpt.isEmpty()) {
+            // Use a default customer ID since we don't have authentication yet
+            String customerId = "default-customer";
+            ShoppingSession newSession = shoppingService.createSession(customerId, storeId, basketId);
+            sessionOpt = Optional.of(newSession);
+
+            // If we just created a new session, there won't be any items to remove
             return ResponseEntity.notFound().build();
         }
 

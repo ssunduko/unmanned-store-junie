@@ -98,27 +98,27 @@ public class DataInitializer {
         Product p1 = new Product("p001", "Bottled Water", new BigDecimal("1.99"), "rfid-bw-001");
         p1.setDescription("Refreshing spring water, 500ml bottle");
         p1.setCategory("Beverages");
-        p1.setImageUrl("https://example.com/images/bottled-water.jpg");
+        p1.setImageUrl("https://images.unsplash.com/photo-1560847335-d8efbd77891e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Ym90dGxlZCUyMHdhdGVyfGVufDB8fDB8fHww");
 
         Product p2 = new Product("p002", "Cola Drink", new BigDecimal("2.49"), "rfid-cd-002");
         p2.setDescription("Classic cola flavor, 330ml can");
         p2.setCategory("Beverages");
-        p2.setImageUrl("https://example.com/images/cola.jpg");
+        p2.setImageUrl("https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGNvbGF8ZW58MHx8MHx8fDA%3D");
 
         Product p3 = new Product("p003", "Orange Juice", new BigDecimal("3.99"), "rfid-oj-003");
         p3.setDescription("Fresh squeezed orange juice, 1L carton");
         p3.setCategory("Beverages");
-        p3.setImageUrl("https://example.com/images/orange-juice.jpg");
+        p3.setImageUrl("https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b3JhbmdlJTIwanVpY2V8ZW58MHx8MHx8fDA%3D");
 
         Product p4 = new Product("p004", "Potato Chips", new BigDecimal("2.99"), "rfid-pc-004");
         p4.setDescription("Crispy salted potato chips, 150g bag");
         p4.setCategory("Snacks");
-        p4.setImageUrl("https://example.com/images/potato-chips.jpg");
+        p4.setImageUrl("https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8cG90YXRvJTIwY2hpcHN8ZW58MHx8MHx8fDA%3D");
 
         Product p5 = new Product("p005", "Chocolate Bar", new BigDecimal("1.79"), "rfid-cb-005");
         p5.setDescription("Milk chocolate bar, 100g");
         p5.setCategory("Snacks");
-        p5.setImageUrl("https://example.com/images/chocolate-bar.jpg");
+        p5.setImageUrl("https://images.unsplash.com/photo-1511381939415-e44015466834?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2hvY29sYXRlJTIwYmFyfGVufDB8fDB8fHww");
 
         // Return list of sample products
         return List.of(p1, p2, p3, p4, p5);
@@ -130,10 +130,10 @@ public class DataInitializer {
      * @return A sample ShoppingSession entity
      */
     private ShoppingSession createSampleShoppingSession() {
-        // Create a sample shopping session
-        String customerId = "sample-customer-" + UUID.randomUUID().toString().substring(0, 8);
-        String storeId = "store-1";
-        String basketId = "basket-" + UUID.randomUUID().toString().substring(0, 8);
+        // Create a sample shopping session with fixed IDs to match frontend expectations
+        String customerId = "sample-customer";
+        String storeId = "store-001";
+        String basketId = "basket-123";
 
         return new ShoppingSession(customerId, storeId, basketId);
     }
