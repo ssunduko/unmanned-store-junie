@@ -95,10 +95,7 @@ public class DataInitializer {
      */
     private List<Product> createSampleProducts() {
         // Create sample products (same as in data.sql)
-        Product p1 = new Product("p001", "Bottled Water", new BigDecimal("1.99"), "rfid-bw-001");
-        p1.setDescription("Refreshing spring water, 500ml bottle");
-        p1.setCategory("Beverages");
-        p1.setImageUrl("https://images.unsplash.com/photo-1560847335-d8efbd77891e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Ym90dGxlZCUyMHdhdGVyfGVufDB8fDB8fHww");
+        // Bottled Water removed as requested
 
         Product p2 = new Product("p002", "Cola Drink", new BigDecimal("2.49"), "rfid-cd-002");
         p2.setDescription("Classic cola flavor, 330ml can");
@@ -120,8 +117,8 @@ public class DataInitializer {
         p5.setCategory("Snacks");
         p5.setImageUrl("https://images.unsplash.com/photo-1511381939415-e44015466834?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Y2hvY29sYXRlJTIwYmFyfGVufDB8fDB8fHww");
 
-        // Return list of sample products
-        return List.of(p1, p2, p3, p4, p5);
+        // Return list of sample products (bottled water removed)
+        return List.of(p2, p3, p4, p5);
     }
 
     /**
