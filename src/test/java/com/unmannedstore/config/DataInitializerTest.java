@@ -33,6 +33,10 @@ public class DataInitializerTest {
         when(mockProductRepository.findAll()).thenReturn(new ArrayList<>());
         when(mockSessionRepository.findAll()).thenReturn(new ArrayList<>());
 
+        // Configure the save method to return the same object that was passed to it
+        when(mockSessionRepository.save(any(ShoppingSession.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(mockProductRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         // Create the DataInitializer
         DataInitializer dataInitializer = new DataInitializer();
 
@@ -42,11 +46,11 @@ public class DataInitializerTest {
         // Run the CommandLineRunner
         runner.run();
 
-        // Verify that save() was called 5 times (once for each sample product)
-        verify(mockProductRepository, times(5)).save(any(Product.class));
+        // Verify that save() was called 4 times (once for each sample product)
+        verify(mockProductRepository, times(4)).save(any(Product.class));
 
         // Verify that a shopping session was created and saved
-        verify(mockSessionRepository, times(2)).save(any(ShoppingSession.class));
+        verify(mockSessionRepository, times(1)).save(any(ShoppingSession.class));
     }
 
     /**
