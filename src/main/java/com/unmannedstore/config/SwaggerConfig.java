@@ -29,7 +29,7 @@ public class SwaggerConfig {
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("Store Operations")
-                                .email("api@unmannedstore.com")))
+                                .email("ssunduko@gmail.com")))
                 .servers(List.of(
                         new Server().url("/").description("Default Server URL")
                 ));
